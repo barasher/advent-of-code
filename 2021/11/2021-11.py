@@ -27,34 +27,57 @@ def flashing(grid):
         for j in range(0, len(grid[0])):
             if grid[i][j] > 9:
                 flash.append((i, j))
-    # print(f"flashing : {flash}")
     return flash
+
+
+def iterate(grid):
+    lc = len(grid)
+    cc = len(grid[0])
+    # inc
+    for l in range(0, lc):
+        for c in range(0, cc):
+            grid[l][c] += 1
+    to_flash = flashing(grid)
+    have_flashed = []
+    while (len(to_flash) > 0):
+        for coord in to_flash:
+            have_flashed.append(coord)
+            for n in neighbor(lc, cc, coord[0], coord[1]):
+                grid[n[0]][n[1]] += 1
+            grid[coord[0]][coord[1]] = 0
+        for coord in have_flashed:
+            grid[coord[0]][coord[1]] = 0
+        to_flash = flashing(grid)
+    return (grid, len(have_flashed))
+
 
 def part1(file, iter):
     grid = load(file)
-    lc = len(grid)
-    cc = len(grid[0])
-    flash_count=0
+    flash_count = 0
     for it in range(0, iter):
-        # inc
-        for l in range(0, lc):
-            for c in range(0, cc):
-                grid[l][c] += 1
-        to_flash = flashing(grid)
-        have_flashed = []
-        while (len(to_flash) > 0):
-            for coord in to_flash:
-                have_flashed.append(coord)
-                for n in neighbor(lc, cc, coord[0], coord[1]):
-                    grid[n[0]][n[1]] += 1
-                grid[coord[0]][coord[1]] = 0
-            for coord in have_flashed:
-                grid[coord[0]][coord[1]] = 0
-            to_flash = flashing(grid)
-        flash_count+=len(have_flashed)
-        # print(f"{it + 1} after flash")
-        # display(grid)
+        grid, flashs = iterate(grid)
+        flash_count += flashs
     print(flash_count)
 
 
-part1("input.txt", 100)
+def is_flashing_synced(grid):
+    for l in grid:
+        for c in l:
+            if c != 0:
+                return False
+    return True
+
+
+def part2(file):
+    grid = load(file)
+    exp_flashes = len(grid) * len(grid[0])
+    flashs = 0
+    iter = 0
+    while flashs != exp_flashes:
+        iter += 1
+        grid, flashs = iterate(grid)
+    print(iter)
+
+
+# part1("input.txt", 100)
+part2("input.txt")
