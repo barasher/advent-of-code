@@ -14,31 +14,54 @@ def load(file):
         return edges
 
 
-def part1(file):
-    paths = []
-    explore(load(file), "", "start", paths, [])
-    print(len(paths))
-
-
 def can_be_visited(node, visited_nodes):
     if node.isupper():
         return True
-    count = len([v for v in visited_nodes if v == node])
-    if count == 0:
+    if node not in visited_nodes:
         visited_nodes.append(node)
         return True
     return False
 
 
-def explore(edges, cur_path, cur_node, paths, visited_nodes):
-    if can_be_visited(cur_node, visited_nodes):
+def can_be_visited2(node, visited_nodes):
+    if node.isupper():
+        return True
+    if node == "start" or node == "end":
+        if node not in visited_nodes:
+            visited_nodes.append(node)
+            return True
+    elif node not in visited_nodes:
+        visited_nodes.append(node)
+        return True
+    elif None not in visited_nodes:
+        visited_nodes.append(None)
+        return True
+    return False
+
+
+def explore(edges, cur_path, cur_node, paths, visited_nodes, cbv):
+    if cbv(cur_node, visited_nodes):
         cur_path = f"{cur_path},{cur_node}"
 
         for next in edges[cur_node]:
             if next == "end":
                 paths.append(f"{cur_path},end")
                 continue
-            explore(edges, cur_path, next, paths, visited_nodes[:])
+            explore(edges, cur_path, next, paths, visited_nodes[:], cbv)
 
 
-part1("input.txt")
+def part1(file):
+    paths = []
+    explore(load(file), "", "start", paths, [], can_be_visited)
+    print(len(paths))
+
+
+def part2(file):
+    paths = []
+    explore(load(file), "", "start", paths, [], can_be_visited2)
+    for p in paths:
+        print(p)
+    print(len(paths))
+
+
+part2("input.txt")
