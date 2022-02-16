@@ -20,6 +20,16 @@ hex_to_bin = {
     "F": "1111"
 }
 
+type_label = {
+    0: "sum",
+    1: "x",
+    2: "min",
+    3: "max",
+    4: "litteral",
+    5: ">",
+    6: "<",
+    7: "="}
+
 
 class Packet:
     def __init__(self, v, t):
@@ -39,6 +49,15 @@ class Packet:
     def children(self):
         return self.c
 
+    def __str__(self):
+        s = [f"{type_label[self.t]}("]
+        sub = []
+        for c in self.children():
+            sub.append(f"{c}")
+        s.append(",".join(sub))
+        s.append(")")
+        return "".join(s)
+
 
 class Operator(Packet):
     def __init__(self, v, t):
@@ -48,17 +67,22 @@ class Operator(Packet):
 class Litteral(Packet):
     def __init__(self, v, t, val):
         super().__init__(v, t)
-        self.value = val
+        self.val = val
 
     def value(self):
-        return self.value()
+        return self.val
+
+    def __str__(self):
+        return str(self.value())
+
+
+def hexa_to_bin(hexa):
+    return "".join([hex_to_bin[c] for c in hexa])
 
 
 def load(file):
     with open(file) as f:
-        hexa = f.readline()[:-1]
-        bin_seq = "".join([hex_to_bin[c] for c in hexa])
-        return bin_seq
+        return hexa_to_bin(f.readline()[:-1])
 
 
 def part1(file):
@@ -74,8 +98,30 @@ def sum_version(p):
     return res
 
 
+def eval(p):
+    t = p.type()
+    if t == 0:  # sum
+        return sum([eval(c) for c in p.children()])
+    elif t == 1:  # product
+        prod = 1
+        for c in p.children():
+            prod *= eval(c)
+        return prod
+    elif t == 2:  # min
+        return min([eval(c) for c in p.children()])
+    elif t == 3:  # max
+        return max([eval(c) for c in p.children()])
+    elif t == 4:  # literals
+        return p.value()
+    elif t == 5:  # >
+        return 1 if eval(p.children()[0]) > eval(p.children()[1]) else 0
+    elif t == 6:  # <
+        return 1 if eval(p.children()[0]) < eval(p.children()[1]) else 0
+    elif t == 7:  # =
+        return 1 if eval(p.children()[0]) == eval(p.children()[1]) else 0
+
+
 def parse(bin):
-    print(f"### {bin}")
     version = int(bin[0:3], 2)
     type = int(bin[3:6], 2)
     if type == 4:  # litteral
@@ -87,15 +133,12 @@ def parse(bin):
             bin_val.append(bin[idx + 1: idx + 5])
             idx += 5
         val = int("".join(bin_val), 2)
-        print(f"Litteral: {val}")
         return Litteral(version, type, val), bin[idx:]
     else:  # operator
         op = Operator(version, type)
         length_type_id = bin[6]
-        print(f"Operator {type}")
         if length_type_id == "0":  # 15 bits for length
             length = int(bin[7:22], 2)
-            print(f"length: {length}")
             children_end_idx = 22 + length
             remains = bin[22:children_end_idx]
             while len(remains) > 0:
@@ -109,6 +152,11 @@ def parse(bin):
                 child, remains = parse(remains)
                 op.add_child(child)
             return op, remains
+
+
+def part2(hexa):
+    p, remains = parse(hexa_to_bin(hexa))
+    print(f"{hexa}: {p} = {eval(p)}")
 
 
 # part1("sample0a.txt")
@@ -125,4 +173,16 @@ def parse(bin):
 # print("")
 # part1("sample4.txt")
 # print("")
-part1("input.txt")
+# part1("input.txt")
+
+part2("C200B40A82")
+part2("04005AC33890")
+part2("880086C3E88112")
+part2("CE00C43D881120")
+part2("D8005AC2A8F0")
+part2("F600BC2D8F")
+part2("9C005AC2F8F0")
+part2("9C0141080250320F1802104A08")
+
+p, remains = parse(load("input.txt"))
+print(f"{p} = {eval(p)}")
